@@ -25,8 +25,13 @@ _INSTRUCTIONS = (
 )
 
 
-def _make_mcp() -> FastMCP:
-    """Build and return a configured FastMCP instance."""
+def _make_mcp(host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
+    """Build and return a configured FastMCP instance.
+
+    Args:
+        host: Bind address (passed to FastMCP constructor for HTTP transport).
+        port: Port (passed to FastMCP constructor for HTTP transport).
+    """
 
     @asynccontextmanager
     async def _lifespan(_server: FastMCP) -> AsyncGenerator[dict[str, Any], None]:
@@ -40,7 +45,13 @@ def _make_mcp() -> FastMCP:
         atom.set_verbosity("error")
         yield {"atom": atom}
 
-    mcp = FastMCP("atlasopenmagic-mcp", lifespan=_lifespan, instructions=_INSTRUCTIONS)
+    mcp = FastMCP(
+        "atlasopenmagic-mcp",
+        lifespan=_lifespan,
+        instructions=_INSTRUCTIONS,
+        host=host,
+        port=port,
+    )
 
     for _module in [discovery, metadata, urls, weights]:
         _module.register(mcp)
@@ -59,8 +70,5 @@ def serve(transport: str = "stdio", host: str = "0.0.0.0", port: int = 8000) -> 
         host: Bind address for HTTP transport (default "0.0.0.0").
         port: Port for HTTP transport (default 8000).
     """
-    mcp = _make_mcp()
-    if transport == "streamable-http":
-        mcp.run(transport="streamable-http", host=host, port=port)
-    else:
-        mcp.run(transport="stdio")
+    mcp = _make_mcp(host=host, port=port)
+    mcp.run(transport=transport)
