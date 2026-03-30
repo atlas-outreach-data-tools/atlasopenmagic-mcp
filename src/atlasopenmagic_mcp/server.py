@@ -33,7 +33,7 @@ def _make_mcp() -> FastMCP:
         """Initialize atlasopenmagic for the lifetime of the MCP server.
 
         Imports atlasopenmagic and sets verbosity to error to suppress
-        console output that would interfere with MCP stdio transport.
+        console output that would interfere with MCP transport.
         """
         import atlasopenmagic as atom  # noqa: PLC0415
 
@@ -50,6 +50,17 @@ def _make_mcp() -> FastMCP:
     return mcp
 
 
-def serve() -> None:
-    """Start the MCP server over stdio."""
-    _make_mcp().run(transport="stdio")
+def serve(transport: str = "stdio", host: str = "0.0.0.0", port: int = 8000) -> None:
+    """Start the MCP server.
+
+    Args:
+        transport: Transport protocol — "stdio" for CLI usage,
+            "streamable-http" for HTTP (OpenWebUI, remote clients).
+        host: Bind address for HTTP transport (default "0.0.0.0").
+        port: Port for HTTP transport (default 8000).
+    """
+    mcp = _make_mcp()
+    if transport == "streamable-http":
+        mcp.run(transport="streamable-http", host=host, port=port)
+    else:
+        mcp.run(transport="stdio")

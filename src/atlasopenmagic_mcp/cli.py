@@ -15,14 +15,31 @@ def main() -> None:
     )
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND")
 
-    subparsers.add_parser(
+    serve_parser = subparsers.add_parser(
         "serve",
-        help="Start the MCP server (stdio transport)",
+        help="Start the MCP server",
+    )
+    serve_parser.add_argument(
+        "--transport",
+        choices=["stdio", "streamable-http"],
+        default="stdio",
+        help="Transport protocol (default: stdio). Use 'streamable-http' for OpenWebUI / remote clients.",
+    )
+    serve_parser.add_argument(
+        "--host",
+        default="0.0.0.0",
+        help="Bind address for HTTP transport (default: 0.0.0.0)",
+    )
+    serve_parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port for HTTP transport (default: 8000)",
     )
 
     args = parser.parse_args()
 
     if args.command == "serve":
-        serve()
+        serve(transport=args.transport, host=args.host, port=args.port)
     else:
         parser.print_help()
