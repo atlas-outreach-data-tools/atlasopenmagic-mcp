@@ -22,7 +22,81 @@ targets a specific use case (education or research) and centre-of-mass energy:
 ## Datasets
 Within a release, each Monte Carlo sample is identified by a numeric
 **dataset number** (DSID), e.g. `301204`, and a human-readable
-**physics_short** name, e.g. `zprime_ee`.
+**physics_short** name, e.g. `Sh_2211_Zee_maxHTpTV2_BFilter`.
+
+## Physics Short Name Convention
+
+The physics_short packs as much information as possible about a sample
+into 50-60 characters. Parts are separated by underscores.
+
+### Part 1: Generator abbreviations (required, always first)
+The first part lists the generator program(s) used to produce the sample.
+
+| Abbreviation | Generator                                    |
+|--------------|----------------------------------------------|
+| Sh           | Sherpa                                       |
+| Ph           | Powheg                                       |
+| Py8          | Pythia8                                      |
+| MG           | MadGraph (normally LO)                       |
+| aMC          | aMC@NLO (aMcAtNlo when spelled out)          |
+| H7           | Herwig7                                      |
+| Ag           | Alpgen                                       |
+| EG           | EvtGen                                       |
+| PG           | ParticleGun                                  |
+| HepMC        | Samples created from HepMC text files        |
+
+Full names like "Sherpa" or "Pythia8" may also appear. When Tauola or
+Photos are used, they are **not** indicated in the name.
+
+### Part 2: Tune / PDF / Sherpa version
+The second part normally describes the PDF set and/or non-perturbative
+physics tune:
+
+- **Tunes**: A14, AZ, AZNLO (Pythia8/Herwig7), H7UE (Herwig7)
+- **Sherpa**: The second field is the Sherpa version number, e.g.
+  `222` = 2.2.2, `2211` = 2.2.11, `2212` = 2.2.12
+- **PDFs**: NNPDF30NNLO, NNPDF23LO, MSTW2008LO, CTEQ6L1, etc.
+  The name encodes the family, release, and perturbative order.
+
+### Remaining parts: Physics process (no strict rules)
+Beyond the first two parts, conventions are flexible but aim for
+readability:
+
+**Process abbreviations:**
+- `tchan` = t-channel, `schan` = s-channel
+- `myy` = diphoton mass, `pty` = photon momentum
+- `Zee` = Z→ee, `Zmumu` = Z→μμ, `Wenu` = W→eν, etc.
+
+**Decay modes:**
+- `incl` / `inc` = inclusive (SM branching fractions)
+- `dil` = di-lepton (e.g. both W bosons decay leptonically)
+- `nonallhad` = at least one lepton
+- `allhad` = all-hadronic
+
+**Production features:**
+- `FxFx` = FxFx merging prescription
+- `HT2bias` = biased in HT2 for better high-energy statistics
+- `SW` / `withSW` = biasing done within the generator itself
+- `DS` = diagram subtraction (single top interference correction)
+- `DR` = diagram removal (single top interference correction)
+
+**Filters (usually at the end):**
+- `MET200` = 200 GeV MET filter
+- `BFilter` = at least one b-quark in the matrix element
+- `BVetoCFilter` = no b-quark, at least one c-quark
+- `BVetoCVeto` = no b-quarks or c-quarks
+- These three heavy-flavor filters should be combined for a complete
+  background estimate.
+- `maxHTpTV2` = filter on HT and pT of the vector boson
+
+**Example**: `Sh_2211_Zee_maxHTpTV2_BFilter` means:
+- Sherpa 2.2.11
+- Z→ee process
+- maxHTpTV2 phase-space filter
+- b-quark filter applied
+
+The job options (Python configuration used to generate the sample) are
+always the definitive reference for interpreting physics_short names.
 
 ## Skims
 Skims are pre-filtered subsets of events sharing a characteristic
@@ -63,7 +137,9 @@ available for the currently active release.
 
 ## Core identification
 - `dataset_number` — Numeric dataset ID (DSID)
-- `physics_short` — Short physics process name (e.g. `zprime_ee`)
+- `physics_short` — Structured sample name encoding generator, tune/PDF,
+  process, decay mode, and filters (see Physics Short Name Convention in
+  the ATLAS Open Data Guide resource for decoding rules)
 - `e_tag` — Event-generation tag (e.g. `e8514`)
 - `release.name` — Name of the release this dataset belongs to
 
@@ -82,8 +158,8 @@ available for the currently active release.
 - `keywords` — List of physics keywords for filtering
 - `description` — Human-readable dataset description
 - `GenEvents` — Number of generated events
-- `GenTune` — Generator tune
-- `PDF` — PDF set used
+- `GenTune` — Generator tune (e.g. `A14`, `AZ`, `AZNLO`, `H7UE`)
+- `PDF` — PDF set used (e.g. `NNPDF30NNLO`, `CTEQ6L1`)
 - `Release` — Software release
 - `Filters` — Generator-level filters applied
 
