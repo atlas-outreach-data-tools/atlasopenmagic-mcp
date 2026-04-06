@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Literal
 
 from mcp.server.fastmcp import Context, FastMCP  # noqa: TC002
 
-from atlasopenmagic_mcp.tools._helpers import run_sync
+from atlasopenmagic_mcp.tools._helpers import format_error, run_sync
 
 
 def register(mcp: FastMCP) -> None:
@@ -17,7 +17,7 @@ def register(mcp: FastMCP) -> None:
     async def atlas_get_urls(
         dataset: str,
         skim: str = "noskim",
-        protocol: str = "https",
+        protocol: Literal["https", "root", "eos"] = "https",
         *,
         ctx: Context[Any, Any],
     ) -> str:
@@ -25,6 +25,8 @@ def register(mcp: FastMCP) -> None:
 
         Returns a list of ROOT file URLs that can be used for streaming or
         downloading ATLAS Open Data files.
+
+        Requires an active release — call atlas_set_release first.
 
         Args:
             dataset: Dataset number (e.g. "301204") or physics_short name.
@@ -37,6 +39,10 @@ def register(mcp: FastMCP) -> None:
         atom = ctx.request_context.lifespan_context["atom"]
         try:
             urls = await run_sync(atom.get_urls, dataset, skim, protocol)
-            return json.dumps(urls)
+            return json.dumps({"count": len(urls), "urls": urls})
         except Exception as exc:  # noqa: BLE001
-            return f"Error: {exc}"
+            return format_error(exc, recovery=[
+                "Ensure a release is set with atlas_set_release.",
+                "Use atlas_available_datasets to check valid DSIDs.",
+                "Use atlas_available_skims to see available skim types.",
+            ])

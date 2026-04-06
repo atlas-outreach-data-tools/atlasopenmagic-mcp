@@ -7,7 +7,7 @@ from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP  # noqa: TC002
 
-from atlasopenmagic_mcp.tools._helpers import run_sync
+from atlasopenmagic_mcp.tools._helpers import format_error, run_sync
 
 
 def register(mcp: FastMCP) -> None:
@@ -23,7 +23,10 @@ def register(mcp: FastMCP) -> None:
         """Get metadata for a dataset (excludes file lists and skims).
 
         Returns physics parameters like cross-section, generator info,
-        keywords, etc. Use atlas_get_all_info if you also need file URLs.
+        keywords, etc. Prefer this over atlas_get_all_info unless you
+        specifically need file URLs, as this returns a smaller response.
+
+        Requires an active release — call atlas_set_release first.
 
         Args:
             dataset: Dataset number (e.g. "301204") or physics_short name
@@ -36,7 +39,11 @@ def register(mcp: FastMCP) -> None:
             result = await run_sync(atom.get_metadata, dataset, field)
             return json.dumps(result, default=str)
         except Exception as exc:  # noqa: BLE001
-            return f"Error: {exc}"
+            return format_error(exc, recovery=[
+                "Ensure a release is set with atlas_set_release.",
+                "Use atlas_available_datasets to check valid DSIDs.",
+                "Use atlas_get_metadata_fields to see available field names.",
+            ])
 
     @mcp.tool()
     async def atlas_get_all_info(
@@ -49,6 +56,10 @@ def register(mcp: FastMCP) -> None:
 
         Returns everything atlas_get_metadata returns, plus file_list (URLs)
         and skims (filtered event subsets with their own file lists).
+        Warning: responses can be large for datasets with many files.
+        Prefer atlas_get_metadata if you only need physics parameters.
+
+        Requires an active release — call atlas_set_release first.
 
         Args:
             dataset: Dataset number (e.g. "301204") or physics_short name.
@@ -60,7 +71,11 @@ def register(mcp: FastMCP) -> None:
             result = await run_sync(atom.get_all_info, dataset, field)
             return json.dumps(result, default=str)
         except Exception as exc:  # noqa: BLE001
-            return f"Error: {exc}"
+            return format_error(exc, recovery=[
+                "Ensure a release is set with atlas_set_release.",
+                "Use atlas_available_datasets to check valid DSIDs.",
+                "Use atlas_get_metadata_fields to see available field names.",
+            ])
 
     @mcp.tool()
     async def atlas_match_metadata(
@@ -75,7 +90,12 @@ def register(mcp: FastMCP) -> None:
         floats, and membership testing for list fields (like keywords).
 
         For AND matching (all values must match), pass a comma-separated
-        string, e.g. "top,Alternative" to find datasets with both keywords.
+        string, e.g. value="top,Alternative" to find datasets with both keywords.
+
+        Examples: field="keywords", value="higgs" finds Higgs-related datasets.
+        field="generator", value="Sherpa" finds Sherpa-generated samples.
+
+        Requires an active release — call atlas_set_release first.
 
         Args:
             field: Metadata field to search (e.g. "keywords", "generator",
@@ -100,9 +120,23 @@ def register(mcp: FastMCP) -> None:
 
             matches = await run_sync(atom.match_metadata, field, search_value)
             if not matches:
-                return "No matching datasets found."
+                return (
+                    "No matching datasets found.\n"
+                    "Recovery steps:\n"
+                    "- Check the field name with atlas_get_metadata_fields.\n"
+                    "- Try a broader search value or different field.\n"
+                    "- Use atlas_available_keywords to see valid keywords."
+                )
             lines = ["| Dataset | physics_short |", "| --- | --- |"]
             lines.extend(f"| {dsid} | {name} |" for dsid, name in matches)
+            lines.append(
+                "\nTip: use atlas_get_metadata(dataset_number) "
+                "for full details on any match."
+            )
             return "\n".join(lines)
         except Exception as exc:  # noqa: BLE001
-            return f"Error: {exc}"
+            return format_error(exc, recovery=[
+                "Ensure a release is set with atlas_set_release.",
+                "Check the field name with atlas_get_metadata_fields.",
+                "Use atlas_available_keywords to see valid keyword values.",
+            ])

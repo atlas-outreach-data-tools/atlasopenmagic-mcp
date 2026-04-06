@@ -40,9 +40,9 @@ class TestUrlTools:
         tools = _capture_tools(register)
 
         result = await tools["atlas_get_urls"](dataset="301204", ctx=mock_ctx)
-        urls = json.loads(result)
-        assert len(urls) == 2
-        assert "opendata.cern.ch" in urls[0]
+        data = json.loads(result)
+        assert data["count"] == 2
+        assert "opendata.cern.ch" in data["urls"][0]
 
     async def test_get_urls_with_skim(self, mock_ctx: MagicMock) -> None:
         from atlasopenmagic_mcp.tools.urls import register

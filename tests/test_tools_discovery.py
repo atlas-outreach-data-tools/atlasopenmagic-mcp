@@ -65,8 +65,9 @@ class TestDiscoveryTools:
         tools = _capture_tools(register)
 
         result = await tools["atlas_available_datasets"](ctx=mock_ctx)
-        datasets = json.loads(result)
-        assert "301204" in datasets
+        data = json.loads(result)
+        assert data["count"] == 2
+        assert "301204" in data["datasets"]
 
     async def test_available_skims(self, mock_ctx: MagicMock) -> None:
         from atlasopenmagic_mcp.tools.discovery import register
