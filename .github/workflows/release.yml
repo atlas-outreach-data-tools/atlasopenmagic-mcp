@@ -18,7 +18,7 @@ jobs:
       - run: pip install build cyclonedx-bom && pip install -e .
       - run: python -m build
       - run: cyclonedx-py environment --of JSON -o dist/sbom.cdx.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
