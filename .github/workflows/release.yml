@@ -18,6 +18,9 @@ jobs:
     permissions:
       id-token: write
 
+    env:
+      MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+
     steps:
     - uses: actions/checkout@v4
 
@@ -40,8 +43,6 @@ jobs:
 
     - name: Notify Mattermost of release
       if: success() && env.MATTERMOST_WEBHOOK_URL != ''
-      env:
-        MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
       run: |
         set -e
         http_status=$(curl -s -w "%{http_code}" -o /tmp/mm_response.txt -X POST -H 'Content-Type: application/json' -d '{
