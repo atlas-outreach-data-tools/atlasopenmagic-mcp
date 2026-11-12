@@ -7,7 +7,7 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 - `readOnlyHint` annotations on all tools (`atlas_set_release` is marked as state-changing).
 - 2 MiB cap on every tool response.
-- CI (ruff, tests on Python 3.10–3.13, `pip-audit`), Dependabot, release workflow with CycloneDX SBOM and PyPI trusted publishing.
+- CI (ruff, tests on Python 3.10–3.13, `pip-audit`), Dependabot, release workflow (same flow as `atlasopenmagic`: a GitHub release triggers PyPI trusted publishing, plus a CycloneDX SBOM attached to the release).
 - `SECURITY.md`, `CODEOWNERS`, tool card.
 
 ### Changed
