@@ -30,7 +30,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "mcp>=1.0,<2",
+  "mcp>=1.0,<3",
   "atlasopenmagic>=1.9,<2",
 ]
 
