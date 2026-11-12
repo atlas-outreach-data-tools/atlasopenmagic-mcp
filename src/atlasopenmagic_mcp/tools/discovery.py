@@ -2,18 +2,24 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP  # noqa: TC002
 
-from atlasopenmagic_mcp.tools._helpers import format_error, run_sync
+from atlasopenmagic_mcp.tools._helpers import (
+    READ_ONLY,
+    SET_STATE,
+    cap_response,
+    dumps_capped,
+    format_error,
+    run_sync,
+)
 
 
 def register(mcp: FastMCP) -> None:
     """Register discovery tools."""
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def atlas_available_releases(
         *,
         ctx: Context[Any, Any],
@@ -33,9 +39,9 @@ def register(mcp: FastMCP) -> None:
         lines.append(
             "\nNext: call atlas_set_release(release_name) to activate a release."
         )
-        return "\n".join(lines)
+        return cap_response("\n".join(lines))
 
-    @mcp.tool()
+    @mcp.tool(annotations=SET_STATE)
     async def atlas_set_release(
         release: str,
         *,
@@ -53,17 +59,18 @@ def register(mcp: FastMCP) -> None:
         atom = ctx.request_context.lifespan_context["atom"]
         try:
             await run_sync(atom.set_release, release)
+        except Exception as exc:  # noqa: BLE001
+            return format_error(exc, recovery=[
+                "Use atlas_available_releases to see valid release names.",
+            ])
+        else:
             return (
                 f"Active release set to '{release}'. "
                 "Next: use atlas_available_datasets to list DSIDs, "
                 "or atlas_match_metadata to search by keyword or field."
             )
-        except Exception as exc:  # noqa: BLE001
-            return format_error(exc, recovery=[
-                "Use atlas_available_releases to see valid release names.",
-            ])
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def atlas_get_current_release(
         *,
         ctx: Context[Any, Any],
@@ -76,7 +83,7 @@ def register(mcp: FastMCP) -> None:
         atom = ctx.request_context.lifespan_context["atom"]
         return atom.get_current_release()
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def atlas_available_datasets(
         *,
         ctx: Context[Any, Any],
@@ -89,14 +96,14 @@ def register(mcp: FastMCP) -> None:
         atom = ctx.request_context.lifespan_context["atom"]
         try:
             datasets = await run_sync(atom.available_datasets)
-            return json.dumps({"count": len(datasets), "datasets": datasets})
+            return dumps_capped({"count": len(datasets), "datasets": datasets})
         except Exception as exc:  # noqa: BLE001
             return format_error(exc, recovery=[
                 "Ensure a release is set with atlas_set_release.",
                 "Use atlas_available_releases to see valid release names.",
             ])
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def atlas_available_skims(
         *,
         ctx: Context[Any, Any],
@@ -111,14 +118,14 @@ def register(mcp: FastMCP) -> None:
         atom = ctx.request_context.lifespan_context["atom"]
         try:
             skims = await run_sync(atom.available_skims)
-            return json.dumps(skims)
+            return dumps_capped(skims)
         except Exception as exc:  # noqa: BLE001
             return format_error(exc, recovery=[
                 "Ensure a release is set with atlas_set_release.",
                 "Use atlas_available_releases to see valid release names.",
             ])
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def atlas_available_keywords(
         *,
         ctx: Context[Any, Any],
@@ -133,14 +140,14 @@ def register(mcp: FastMCP) -> None:
         atom = ctx.request_context.lifespan_context["atom"]
         try:
             keywords = await run_sync(atom.available_keywords)
-            return json.dumps(keywords)
+            return dumps_capped(keywords)
         except Exception as exc:  # noqa: BLE001
             return format_error(exc, recovery=[
                 "Ensure a release is set with atlas_set_release.",
                 "Use atlas_available_releases to see valid release names.",
             ])
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def atlas_get_metadata_fields(
         *,
         ctx: Context[Any, Any],
@@ -156,7 +163,7 @@ def register(mcp: FastMCP) -> None:
         atom = ctx.request_context.lifespan_context["atom"]
         try:
             fields = await run_sync(atom.get_metadata_fields)
-            return json.dumps(fields)
+            return dumps_capped(fields)
         except Exception as exc:  # noqa: BLE001
             return format_error(exc, recovery=[
                 "Ensure a release is set with atlas_set_release.",

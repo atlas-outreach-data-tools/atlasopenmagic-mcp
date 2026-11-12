@@ -3,7 +3,18 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from typing import Any
+
+from mcp.types import ToolAnnotations
+
+# Every tool except atlas_set_release only reads public data.
+READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=True)
+# atlas_set_release changes the session's active release but writes nothing remote.
+SET_STATE = ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+
+# Upper bound for one tool response, as in fts-mcp (2 MiB).
+MAX_RESPONSE_CHARS = 2 * 1024 * 1024
 
 
 async def run_sync(func: Any, *args: Any, **kwargs: Any) -> Any:
@@ -43,3 +54,19 @@ def format_error(exc: Exception, *, recovery: list[str] | None = None) -> str:
         parts.append("Recovery steps:")
         parts.extend(f"- {step}" for step in recovery)
     return "\n".join(parts)
+
+
+def cap_response(text: str, limit: int = MAX_RESPONSE_CHARS) -> str:
+    """Truncate an oversized tool response and tell the agent how to narrow it."""
+    if len(text) <= limit:
+        return text
+    return (
+        text[:limit]
+        + f"\n\n[Truncated: response exceeded {limit} characters. "
+        "Narrow the request (specific dataset, skim, or field) and retry.]"
+    )
+
+
+def dumps_capped(obj: Any, **kwargs: Any) -> str:
+    """Serialize to JSON and cap the size."""
+    return cap_response(json.dumps(obj, **kwargs))

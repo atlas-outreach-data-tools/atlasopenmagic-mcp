@@ -30,8 +30,8 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "mcp>=1.0",
-  "atlasopenmagic>=1.9",
+  "mcp>=1.0,<2",
+  "atlasopenmagic>=1.9,<2",
 ]
 
 [project.scripts]
@@ -153,6 +153,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["T20"]
+"src/atlasopenmagic_mcp/nomenclature.py" = ["RUF001"]  # physics symbols in reference text
 
 
 [tool.pylint]

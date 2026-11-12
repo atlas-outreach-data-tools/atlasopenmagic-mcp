@@ -25,7 +25,7 @@ def _capture_tools(register_func):
     mcp = MagicMock()
     tools: dict = {}
 
-    def capture_tool():
+    def capture_tool(**_kwargs):
         def decorator(func):
             tools[func.__name__] = func
             return func

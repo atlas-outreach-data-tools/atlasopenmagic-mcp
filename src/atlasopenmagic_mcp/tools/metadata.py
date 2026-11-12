@@ -2,18 +2,24 @@
 
 from __future__ import annotations
 
-import json
+import contextlib
 from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP  # noqa: TC002
 
-from atlasopenmagic_mcp.tools._helpers import format_error, run_sync
+from atlasopenmagic_mcp.tools._helpers import (
+    READ_ONLY,
+    cap_response,
+    dumps_capped,
+    format_error,
+    run_sync,
+)
 
 
 def register(mcp: FastMCP) -> None:
     """Register metadata tools."""
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def atlas_get_metadata(
         dataset: str,
         field: str | None = None,
@@ -37,7 +43,7 @@ def register(mcp: FastMCP) -> None:
         atom = ctx.request_context.lifespan_context["atom"]
         try:
             result = await run_sync(atom.get_metadata, dataset, field)
-            return json.dumps(result, default=str)
+            return dumps_capped(result, default=str)
         except Exception as exc:  # noqa: BLE001
             return format_error(exc, recovery=[
                 "Ensure a release is set with atlas_set_release.",
@@ -45,7 +51,7 @@ def register(mcp: FastMCP) -> None:
                 "Use atlas_get_metadata_fields to see available field names.",
             ])
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def atlas_get_all_info(
         dataset: str,
         field: str | None = None,
@@ -69,7 +75,7 @@ def register(mcp: FastMCP) -> None:
         atom = ctx.request_context.lifespan_context["atom"]
         try:
             result = await run_sync(atom.get_all_info, dataset, field)
-            return json.dumps(result, default=str)
+            return dumps_capped(result, default=str)
         except Exception as exc:  # noqa: BLE001
             return format_error(exc, recovery=[
                 "Ensure a release is set with atlas_set_release.",
@@ -77,7 +83,7 @@ def register(mcp: FastMCP) -> None:
                 "Use atlas_get_metadata_fields to see available field names.",
             ])
 
-    @mcp.tool()
+    @mcp.tool(annotations=READ_ONLY)
     async def atlas_match_metadata(
         field: str,
         value: str,
@@ -113,10 +119,8 @@ def register(mcp: FastMCP) -> None:
 
             # Try numeric conversion for float fields
             if isinstance(search_value, str):
-                try:
+                with contextlib.suppress(ValueError):
                     search_value = float(search_value)
-                except ValueError:
-                    pass
 
             matches = await run_sync(atom.match_metadata, field, search_value)
             if not matches:
@@ -133,7 +137,7 @@ def register(mcp: FastMCP) -> None:
                 "\nTip: use atlas_get_metadata(dataset_number) "
                 "for full details on any match."
             )
-            return "\n".join(lines)
+            return cap_response("\n".join(lines))
         except Exception as exc:  # noqa: BLE001
             return format_error(exc, recovery=[
                 "Ensure a release is set with atlas_set_release.",
